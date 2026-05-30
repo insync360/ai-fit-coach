@@ -17,6 +17,7 @@ import { Route as ApiCoachRouteImport } from './routes/api/coach'
 import { Route as ApiAnalyzeFoodRouteImport } from './routes/api/analyze-food'
 import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
 import { Route as AuthedProgressRouteImport } from './routes/_authed/progress'
+import { Route as AuthedFoodLibraryRouteImport } from './routes/_authed/food-library'
 import { Route as AuthedAnalyticsRouteImport } from './routes/_authed/analytics'
 import { Route as AuthedAddRouteImport } from './routes/_authed/add'
 
@@ -59,6 +60,11 @@ const AuthedProgressRoute = AuthedProgressRouteImport.update({
   path: '/progress',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedFoodLibraryRoute = AuthedFoodLibraryRouteImport.update({
+  id: '/food-library',
+  path: '/food-library',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedAnalyticsRoute = AuthedAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/add': typeof AuthedAddRoute
   '/analytics': typeof AuthedAnalyticsRoute
+  '/food-library': typeof AuthedFoodLibraryRoute
   '/progress': typeof AuthedProgressRoute
   '/settings': typeof AuthedSettingsRoute
   '/api/analyze-food': typeof ApiAnalyzeFoodRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/add': typeof AuthedAddRoute
   '/analytics': typeof AuthedAnalyticsRoute
+  '/food-library': typeof AuthedFoodLibraryRoute
   '/progress': typeof AuthedProgressRoute
   '/settings': typeof AuthedSettingsRoute
   '/api/analyze-food': typeof ApiAnalyzeFoodRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_authed/add': typeof AuthedAddRoute
   '/_authed/analytics': typeof AuthedAnalyticsRoute
+  '/_authed/food-library': typeof AuthedFoodLibraryRoute
   '/_authed/progress': typeof AuthedProgressRoute
   '/_authed/settings': typeof AuthedSettingsRoute
   '/api/analyze-food': typeof ApiAnalyzeFoodRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/add'
     | '/analytics'
+    | '/food-library'
     | '/progress'
     | '/settings'
     | '/api/analyze-food'
@@ -123,6 +133,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/add'
     | '/analytics'
+    | '/food-library'
     | '/progress'
     | '/settings'
     | '/api/analyze-food'
@@ -135,6 +146,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_authed/add'
     | '/_authed/analytics'
+    | '/_authed/food-library'
     | '/_authed/progress'
     | '/_authed/settings'
     | '/api/analyze-food'
@@ -208,6 +220,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedProgressRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/food-library': {
+      id: '/_authed/food-library'
+      path: '/food-library'
+      fullPath: '/food-library'
+      preLoaderRoute: typeof AuthedFoodLibraryRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/analytics': {
       id: '/_authed/analytics'
       path: '/analytics'
@@ -228,6 +247,7 @@ declare module '@tanstack/react-router' {
 interface AuthedRouteChildren {
   AuthedAddRoute: typeof AuthedAddRoute
   AuthedAnalyticsRoute: typeof AuthedAnalyticsRoute
+  AuthedFoodLibraryRoute: typeof AuthedFoodLibraryRoute
   AuthedProgressRoute: typeof AuthedProgressRoute
   AuthedSettingsRoute: typeof AuthedSettingsRoute
   AuthedIndexRoute: typeof AuthedIndexRoute
@@ -236,6 +256,7 @@ interface AuthedRouteChildren {
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedAddRoute: AuthedAddRoute,
   AuthedAnalyticsRoute: AuthedAnalyticsRoute,
+  AuthedFoodLibraryRoute: AuthedFoodLibraryRoute,
   AuthedProgressRoute: AuthedProgressRoute,
   AuthedSettingsRoute: AuthedSettingsRoute,
   AuthedIndexRoute: AuthedIndexRoute,

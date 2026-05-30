@@ -54,6 +54,12 @@ export type Profile = {
 
 export type CoachMessage = { id: string; role: "user" | "assistant"; content: string; ts: number };
 
+export type MasterFood = {
+  id: string;
+  name: string;
+  serving: string; // free-text label, e.g. "100g" or "1 medium chapati"
+} & Macros;
+
 export type AppState = {
   hydrated: boolean;
   userId: string | null;
@@ -63,6 +69,7 @@ export type AppState = {
   weights: WeightEntry[];
   photos: ProgressPhoto[];
   coach: CoachMessage[];
+  masterFoods: MasterFood[];
 };
 
 const defaultProfile: Profile = {
@@ -89,6 +96,7 @@ const defaultState: AppState = {
   weights: [],
   photos: [],
   coach: [],
+  masterFoods: [],
 };
 
 let state: AppState = defaultState;
@@ -254,6 +262,23 @@ function mapCoach(r: CoachRow): CoachMessage {
   };
 }
 
+type MasterFoodRow = {
+  id: string; name: string; serving: string;
+  calories: number; protein: number; carbs: number; fat: number; fiber: number | null;
+};
+function mapMasterFood(r: MasterFoodRow): MasterFood {
+  return {
+    id: r.id,
+    name: r.name,
+    serving: r.serving,
+    calories: Number(r.calories),
+    protein: Number(r.protein),
+    carbs: Number(r.carbs),
+    fat: Number(r.fat),
+    fiber: r.fiber == null ? undefined : Number(r.fiber),
+  };
+}
+
 // --- Hydration / clear ---
 
 export async function hydrate(userId: string): Promise<void> {
@@ -264,13 +289,14 @@ export async function hydrate(userId: string): Promise<void> {
     /* ignore */
   }
 
-  const [profileRes, entriesRes, savedMealsRes, weightsRes, photosRes, coachRes] = await Promise.all([
+  const [profileRes, entriesRes, savedMealsRes, weightsRes, photosRes, coachRes, masterFoodsRes] = await Promise.all([
     supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
     supabase.from("food_entries").select("*").order("logged_at", { ascending: true }),
     supabase.from("saved_meals").select("*").order("created_at", { ascending: false }),
     supabase.from("weights").select("*").order("date", { ascending: true }),
     supabase.from("progress_photos").select("*").order("created_at", { ascending: false }),
     supabase.from("coach_messages").select("*").order("created_at", { ascending: true }),
+    supabase.from("master_foods").select("*").order("name", { ascending: true }),
   ]);
 
   const profile = profileRes.data ? mapProfile(profileRes.data as ProfileRow) : defaultProfile;
@@ -284,6 +310,7 @@ export async function hydrate(userId: string): Promise<void> {
     weights: ((weightsRes.data ?? []) as WeightRow[]).map(mapWeight),
     photos: ((photosRes.data ?? []) as PhotoRow[]).map(mapPhoto),
     coach: ((coachRes.data ?? []) as CoachRow[]).map(mapCoach),
+    masterFoods: ((masterFoodsRes.data ?? []) as MasterFoodRow[]).map(mapMasterFood),
   };
   applyTheme(profile.theme);
   emit();
@@ -520,10 +547,90 @@ export function clearCoach() {
     });
 }
 
+export function addMasterFood(input: Omit<MasterFood, "id">): Promise<void> {
+  const id = uid();
+  const item: MasterFood = { ...input, id };
+  setState((s) => ({ ...s, masterFoods: [...s.masterFoods, item].sort((a, b) => a.name.localeCompare(b.name)) }));
+
+  return supabase
+    .from("master_foods")
+    .insert({
+      id,
+      name: item.name,
+      serving: item.serving,
+      calories: item.calories,
+      protein: item.protein,
+      carbs: item.carbs,
+      fat: item.fat,
+      fiber: item.fiber ?? null,
+    })
+    .then(({ error }) => {
+      if (error) {
+        setState((s) => ({ ...s, masterFoods: s.masterFoods.filter((m) => m.id !== id) }));
+        throw new Error(error.message);
+      }
+    });
+}
+
+export function updateMasterFood(id: string, patch: Partial<Omit<MasterFood, "id">>): Promise<void> {
+  const prev = state.masterFoods.find((m) => m.id === id);
+  if (!prev) return Promise.resolve();
+  setState((s) => ({
+    ...s,
+    masterFoods: s.masterFoods
+      .map((m) => (m.id === id ? { ...m, ...patch } : m))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  }));
+
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.name !== undefined) dbPatch.name = patch.name;
+  if (patch.serving !== undefined) dbPatch.serving = patch.serving;
+  if (patch.calories !== undefined) dbPatch.calories = patch.calories;
+  if (patch.protein !== undefined) dbPatch.protein = patch.protein;
+  if (patch.carbs !== undefined) dbPatch.carbs = patch.carbs;
+  if (patch.fat !== undefined) dbPatch.fat = patch.fat;
+  if (patch.fiber !== undefined) dbPatch.fiber = patch.fiber ?? null;
+  dbPatch.updated_at = new Date().toISOString();
+
+  return supabase
+    .from("master_foods")
+    .update(dbPatch)
+    .eq("id", id)
+    .then(({ error }) => {
+      if (error) {
+        setState((s) => ({
+          ...s,
+          masterFoods: s.masterFoods.map((m) => (m.id === id ? prev : m)),
+        }));
+        throw new Error(error.message);
+      }
+    });
+}
+
+export function deleteMasterFood(id: string): Promise<void> {
+  const prev = state.masterFoods.find((m) => m.id === id);
+  if (!prev) return Promise.resolve();
+  setState((s) => ({ ...s, masterFoods: s.masterFoods.filter((m) => m.id !== id) }));
+
+  return supabase
+    .from("master_foods")
+    .delete()
+    .eq("id", id)
+    .then(({ error }) => {
+      if (error) {
+        setState((s) => ({
+          ...s,
+          masterFoods: [...s.masterFoods, prev].sort((a, b) => a.name.localeCompare(b.name)),
+        }));
+        throw new Error(error.message);
+      }
+    });
+}
+
 export async function resetAllUserData(): Promise<void> {
   const userId = state.userId;
   if (!userId) return;
-  const tables = ["food_entries", "saved_meals", "weights", "progress_photos", "coach_messages"] as const;
+  const tables = ["food_entries", "saved_meals", "weights", "progress_photos", "coach_messages", "master_foods"] as const;
   const results = await Promise.all(
     tables.map((t) => supabase.from(t).delete().eq("user_id", userId)),
   );

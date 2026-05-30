@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Shell } from "@/components/Shell";
 import { useRef, useState } from "react";
 import { Camera, Image as ImageIcon, Loader2, Save, Search, Sparkles, Type, Zap } from "lucide-react";
-import { addFoodEntry, deleteSavedMeal, saveMeal, useStore, type Macros } from "@/lib/store";
+import { addFoodEntry, deleteSavedMeal, getState, saveMeal, useStore, type Macros } from "@/lib/store";
 import { resizeImageDataUrl, uploadPhoto } from "@/lib/photos";
 import { toast } from "sonner";
 
@@ -110,6 +110,15 @@ function AIScan({ meal }: { meal: Meal }) {
     }
     setLoading(true);
     try {
+      const masterFoods = getState().masterFoods.map((m) => ({
+        name: m.name,
+        serving: m.serving,
+        calories: m.calories,
+        protein: m.protein,
+        carbs: m.carbs,
+        fat: m.fat,
+        fiber: m.fiber,
+      }));
       const res = await fetch("/api/analyze-food", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -117,6 +126,7 @@ function AIScan({ meal }: { meal: Meal }) {
           imageDataUrl: imageUrl,
           description: description.trim() || undefined,
           clarifications: extraClarification,
+          masterFoods,
         }),
       });
       if (!res.ok) throw new Error(await res.text());

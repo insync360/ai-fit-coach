@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Shell } from "@/components/Shell";
 import { resetAllUserData, setTheme, updateProfile, useStore, type Profile } from "@/lib/store";
 import { useEffect, useState } from "react";
-import { Check, Loader2, LogOut, Moon, Sun } from "lucide-react";
+import { BookOpen, Check, ChevronRight, Loader2, LogOut, Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,6 +18,7 @@ export const Route = createFileRoute("/_authed/settings")({
 
 function Settings() {
   const profile = useStore((s) => s.profile);
+  const masterFoodCount = useStore((s) => s.masterFoods.length);
   const navigate = useNavigate();
 
   // Local edit buffer — fields write here, nothing persists until Save.
@@ -147,6 +148,26 @@ function Settings() {
             <NumField label="Carbs (g)" value={form.targetCarbs} onChange={(v) => patch({ targetCarbs: v })} />
           </Row>
           <NumField label="Fat (g)" value={form.targetFat} onChange={(v) => patch({ targetFat: v })} />
+        </Section>
+
+        <Section title="Food library">
+          <Link
+            to="/food-library"
+            className="flex w-full items-center justify-between border border-border bg-surface px-4 py-3"
+          >
+            <div className="flex items-center gap-3">
+              <BookOpen className="h-4 w-4 text-primary" />
+              <div className="text-left">
+                <div className="text-sm font-semibold">Manage food library</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {masterFoodCount === 0
+                    ? "Empty — add foods so the AI uses your exact macros"
+                    : `${masterFoodCount} food${masterFoodCount === 1 ? "" : "s"} with verified macros`}
+                </div>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </Link>
         </Section>
 
         <Section title="Data">
