@@ -78,10 +78,12 @@ function Dashboard() {
       </section>
 
       {/* Quick stats strip */}
-      <section className="mt-3 grid grid-cols-3 gap-px bg-border px-5">
-        <Stat label="Logged" value={todayEntries.length.toString()} />
-        <Stat label="Fiber" value={`${Math.round(totals.fiber ?? 0)}g`} />
-        <Stat label="Weight" value={`${state.profile.weight}kg`} />
+      <section className="mt-3 px-5">
+        <div className="grid grid-cols-3 gap-px bg-border">
+          <Stat label="Logged" value={todayEntries.length.toString()} />
+          <Stat label="Fiber" value={`${Math.round(totals.fiber ?? 0)}g`} />
+          <Stat label="Protein" value={`${Math.round(totals.protein)}g`} />
+        </div>
       </section>
 
       {/* Meals */}
