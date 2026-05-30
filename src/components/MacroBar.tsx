@@ -15,14 +15,14 @@ export function MacroBar({
   const colorVar = color === "primary" ? "var(--color-primary)" : `var(--color-${color})`;
   return (
     <div>
-      <div className="flex items-baseline justify-between">
-        <span className="label-eyebrow">{label}</span>
-        <span className="num-display text-xs text-muted-foreground">
-          <span className="text-foreground font-semibold">{Math.round(value)}</span>
-          <span> / {Math.round(target)}{unit}</span>
+      <div className="label-eyebrow">{label}</div>
+      <div className="mt-1 flex items-baseline gap-1">
+        <span className="num-display text-base font-semibold text-foreground">{Math.round(value)}</span>
+        <span className="num-display text-[11px] text-muted-foreground">
+          / {Math.round(target)}{unit}
         </span>
       </div>
-      <div className="mt-1.5 h-1.5 w-full bg-surface-2">
+      <div className="mt-2 h-1.5 w-full bg-surface-2">
         <div
           className="h-full transition-all duration-500"
           style={{ width: `${pct}%`, backgroundColor: colorVar }}
