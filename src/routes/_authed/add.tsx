@@ -3,7 +3,7 @@ import { Shell } from "@/components/Shell";
 import { useRef, useState } from "react";
 import { Camera, Image as ImageIcon, Loader2, Save, Search, Sparkles, Type, Zap } from "lucide-react";
 import { addFoodEntry, deleteSavedMeal, saveMeal, useStore, type Macros } from "@/lib/store";
-import { uploadPhoto } from "@/lib/photos";
+import { resizeImageDataUrl, uploadPhoto } from "@/lib/photos";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authed/add")({
@@ -91,12 +91,16 @@ function AIScan({ meal }: { meal: Meal }) {
   const handleFile = async (file?: File) => {
     if (!file) return;
     setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImageUrl(reader.result as string);
-      setResult(null);
-    };
-    reader.readAsDataURL(file);
+    setResult(null);
+    try {
+      // Downsize for the AI analysis payload (the full-quality `file` is
+      // still uploaded to Storage when the user clicks Log/Save).
+      const dataUrl = await resizeImageDataUrl(file, 1024, 0.85);
+      setImageUrl(dataUrl);
+    } catch (e) {
+      toast.error(`Couldn't read image: ${(e as Error).message}`);
+      setImageFile(null);
+    }
   };
 
   const analyze = async (extraClarification?: string) => {
