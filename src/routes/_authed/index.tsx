@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Flame, MessageSquare, Plus, Trash2, Utensils } from "lucide-react";
 import { CoachSheet } from "@/components/CoachSheet";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authed/")({
   head: () => ({
     meta: [
       { title: "Today — Calorie Tracker" },

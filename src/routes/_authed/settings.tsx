@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Shell } from "@/components/Shell";
-import { setTheme, updateProfile, useStore, type Profile } from "@/lib/store";
-import { Moon, Sun } from "lucide-react";
+import { resetAllUserData, setTheme, updateProfile, useStore, type Profile } from "@/lib/store";
+import { LogOut, Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/settings")({
+export const Route = createFileRoute("/_authed/settings")({
   head: () => ({
     meta: [
       { title: "Profile & Goals" },
@@ -16,6 +17,16 @@ export const Route = createFileRoute("/settings")({
 
 function Settings() {
   const p = useStore((s) => s.profile);
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    navigate({ to: "/login" });
+  }
 
   // AI suggestion: Mifflin-St Jeor BMR + activity multiplier
   const bmr = p.gender === "male"
@@ -96,15 +107,25 @@ function Settings() {
 
         <Section title="Data">
           <button
-            onClick={() => {
-              if (confirm("Clear all logged data? This cannot be undone.")) {
-                localStorage.removeItem("ctrack-v1");
-                location.reload();
+            onClick={async () => {
+              if (confirm("Clear all your logged data? This cannot be undone.")) {
+                await resetAllUserData();
+                toast.success("All data cleared");
               }
             }}
             className="w-full border border-destructive bg-surface py-3 text-xs font-bold uppercase tracking-wider text-destructive"
           >
             Reset all data
+          </button>
+        </Section>
+
+        <Section title="Account">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center justify-center gap-2 border border-border bg-surface py-3 text-xs font-bold uppercase tracking-wider"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Sign out
           </button>
         </Section>
       </div>

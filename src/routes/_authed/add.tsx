@@ -3,9 +3,10 @@ import { Shell } from "@/components/Shell";
 import { useRef, useState } from "react";
 import { Camera, Image as ImageIcon, Loader2, Save, Search, Sparkles, Type, Zap } from "lucide-react";
 import { addFoodEntry, deleteSavedMeal, saveMeal, useStore, type Macros } from "@/lib/store";
+import { uploadPhoto } from "@/lib/photos";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/add")({
+export const Route = createFileRoute("/_authed/add")({
   head: () => ({
     meta: [
       { title: "Add Food — AI Recognition" },
@@ -80,13 +81,16 @@ function AIScan({ meal }: { meal: Meal }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef = useRef<HTMLInputElement>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [clarification, setClarification] = useState("");
 
   const handleFile = async (file?: File) => {
     if (!file) return;
+    setImageFile(file);
     const reader = new FileReader();
     reader.onload = () => {
       setImageUrl(reader.result as string);
@@ -121,8 +125,19 @@ function AIScan({ meal }: { meal: Meal }) {
     }
   };
 
-  const logIt = () => {
-    if (!result) return;
+  const logIt = async () => {
+    if (!result || saving) return;
+    setSaving(true);
+    let imagePath: string | undefined;
+    if (imageFile) {
+      try {
+        imagePath = await uploadPhoto(imageFile, "food");
+      } catch (e) {
+        toast.error(`Upload failed: ${(e as Error).message}`);
+        setSaving(false);
+        return;
+      }
+    }
     result.items.forEach((it) => {
       addFoodEntry({
         name: it.name,
@@ -133,17 +148,30 @@ function AIScan({ meal }: { meal: Meal }) {
         carbs: it.carbs,
         fat: it.fat,
         fiber: it.fiber,
-        imageUrl: imageUrl ?? undefined,
+        imagePath,
       });
     });
     toast.success(`Logged ${result.items.length} item${result.items.length > 1 ? "s" : ""}`);
     setImageUrl(null);
+    setImageFile(null);
     setDescription("");
     setResult(null);
+    setSaving(false);
   };
 
-  const saveAsMeal = () => {
-    if (!result) return;
+  const saveAsMeal = async () => {
+    if (!result || saving) return;
+    setSaving(true);
+    let imagePath: string | undefined;
+    if (imageFile) {
+      try {
+        imagePath = await uploadPhoto(imageFile, "food");
+      } catch (e) {
+        toast.error(`Upload failed: ${(e as Error).message}`);
+        setSaving(false);
+        return;
+      }
+    }
     saveMeal({
       name: result.items.map((i) => i.name).join(" + "),
       serving: result.items[0]?.serving ?? "1 serving",
@@ -152,9 +180,10 @@ function AIScan({ meal }: { meal: Meal }) {
       carbs: result.totals.carbs,
       fat: result.totals.fat,
       fiber: result.totals.fiber,
-      imageUrl: imageUrl ?? undefined,
+      imagePath,
     });
     toast.success("Saved to library");
+    setSaving(false);
   };
 
   return (
@@ -183,7 +212,7 @@ function AIScan({ meal }: { meal: Meal }) {
       {imageUrl && (
         <div className="panel">
           <img src={imageUrl} alt="Food" className="aspect-square w-full object-cover" />
-          <button onClick={() => { setImageUrl(null); setResult(null); }} className="w-full border-t border-border py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <button onClick={() => { setImageUrl(null); setImageFile(null); setResult(null); }} className="w-full border-t border-border py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Change photo
           </button>
         </div>
@@ -260,11 +289,11 @@ function AIScan({ meal }: { meal: Meal }) {
           )}
 
           <div className="grid grid-cols-2 gap-px bg-border">
-            <button onClick={saveAsMeal} className="flex items-center justify-center gap-2 bg-surface py-3.5 text-xs font-bold uppercase tracking-wider">
-              <Save className="h-4 w-4" /> Save
+            <button onClick={saveAsMeal} disabled={saving} className="flex items-center justify-center gap-2 bg-surface py-3.5 text-xs font-bold uppercase tracking-wider disabled:opacity-50">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
             </button>
-            <button onClick={logIt} className="flex items-center justify-center gap-2 bg-foreground py-3.5 text-xs font-bold uppercase tracking-wider text-background">
-              <Zap className="h-4 w-4" /> Log it
+            <button onClick={logIt} disabled={saving} className="flex items-center justify-center gap-2 bg-foreground py-3.5 text-xs font-bold uppercase tracking-wider text-background disabled:opacity-50">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />} Log it
             </button>
           </div>
         </div>
@@ -325,7 +354,7 @@ function SavedMeals({ meal }: { meal: Meal }) {
                 <div className="num-display text-sm font-bold">{Math.round(m.calories)}</div>
                 <button
                   onClick={() => {
-                    addFoodEntry({ ...m, meal, imageUrl: m.imageUrl });
+                    addFoodEntry({ ...m, meal, imagePath: m.imagePath });
                     toast.success(`Added ${m.name}`);
                   }}
                   className="border border-foreground bg-foreground px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-background"
@@ -354,7 +383,7 @@ function SavedMeals({ meal }: { meal: Meal }) {
                 </div>
                 <button
                   onClick={() => {
-                    addFoodEntry({ name: m.name, meal, serving: m.serving, calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat, fiber: m.fiber, imageUrl: m.imageUrl });
+                    addFoodEntry({ name: m.name, meal, serving: m.serving, calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat, fiber: m.fiber, imagePath: m.imagePath });
                     toast.success(`Added ${m.name}`);
                   }}
                   className="border border-border bg-surface-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider"

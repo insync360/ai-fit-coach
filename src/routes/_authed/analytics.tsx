@@ -4,7 +4,7 @@ import { totalsForDate, useStore } from "@/lib/store";
 import { useMemo } from "react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-export const Route = createFileRoute("/analytics")({
+export const Route = createFileRoute("/_authed/analytics")({
   head: () => ({
     meta: [
       { title: "Analytics — Trends & Insights" },

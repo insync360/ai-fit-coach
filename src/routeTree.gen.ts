@@ -9,38 +9,35 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as ProgressRouteImport } from './routes/progress'
-import { Route as AnalyticsRouteImport } from './routes/analytics'
-import { Route as AddRouteImport } from './routes/add'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthedRouteImport } from './routes/_authed'
+import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
 import { Route as ApiCoachRouteImport } from './routes/api/coach'
 import { Route as ApiAnalyzeFoodRouteImport } from './routes/api/analyze-food'
+import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
+import { Route as AuthedProgressRouteImport } from './routes/_authed/progress'
+import { Route as AuthedAnalyticsRouteImport } from './routes/_authed/analytics'
+import { Route as AuthedAddRouteImport } from './routes/_authed/add'
 
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProgressRoute = ProgressRouteImport.update({
-  id: '/progress',
-  path: '/progress',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AnalyticsRoute = AnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
+const AuthedRoute = AuthedRouteImport.update({
+  id: '/_authed',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AddRoute = AddRouteImport.update({
-  id: '/add',
-  path: '/add',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthedIndexRoute = AuthedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthedRoute,
 } as any)
 const ApiCoachRoute = ApiCoachRouteImport.update({
   id: '/api/coach',
@@ -52,39 +49,68 @@ const ApiAnalyzeFoodRoute = ApiAnalyzeFoodRouteImport.update({
   path: '/api/analyze-food',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthedSettingsRoute = AuthedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedProgressRoute = AuthedProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedAnalyticsRoute = AuthedAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedAddRoute = AuthedAddRouteImport.update({
+  id: '/add',
+  path: '/add',
+  getParentRoute: () => AuthedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/add': typeof AddRoute
-  '/analytics': typeof AnalyticsRoute
-  '/progress': typeof ProgressRoute
-  '/settings': typeof SettingsRoute
+  '/': typeof AuthedIndexRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/add': typeof AuthedAddRoute
+  '/analytics': typeof AuthedAnalyticsRoute
+  '/progress': typeof AuthedProgressRoute
+  '/settings': typeof AuthedSettingsRoute
   '/api/analyze-food': typeof ApiAnalyzeFoodRoute
   '/api/coach': typeof ApiCoachRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/add': typeof AddRoute
-  '/analytics': typeof AnalyticsRoute
-  '/progress': typeof ProgressRoute
-  '/settings': typeof SettingsRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/add': typeof AuthedAddRoute
+  '/analytics': typeof AuthedAnalyticsRoute
+  '/progress': typeof AuthedProgressRoute
+  '/settings': typeof AuthedSettingsRoute
   '/api/analyze-food': typeof ApiAnalyzeFoodRoute
   '/api/coach': typeof ApiCoachRoute
+  '/': typeof AuthedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/add': typeof AddRoute
-  '/analytics': typeof AnalyticsRoute
-  '/progress': typeof ProgressRoute
-  '/settings': typeof SettingsRoute
+  '/_authed': typeof AuthedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/_authed/add': typeof AuthedAddRoute
+  '/_authed/analytics': typeof AuthedAnalyticsRoute
+  '/_authed/progress': typeof AuthedProgressRoute
+  '/_authed/settings': typeof AuthedSettingsRoute
   '/api/analyze-food': typeof ApiAnalyzeFoodRoute
   '/api/coach': typeof ApiCoachRoute
+  '/_authed/': typeof AuthedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
+    | '/signup'
     | '/add'
     | '/analytics'
     | '/progress'
@@ -93,70 +119,66 @@ export interface FileRouteTypes {
     | '/api/coach'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
+    | '/login'
+    | '/signup'
     | '/add'
     | '/analytics'
     | '/progress'
     | '/settings'
     | '/api/analyze-food'
     | '/api/coach'
+    | '/'
   id:
     | '__root__'
-    | '/'
-    | '/add'
-    | '/analytics'
-    | '/progress'
-    | '/settings'
+    | '/_authed'
+    | '/login'
+    | '/signup'
+    | '/_authed/add'
+    | '/_authed/analytics'
+    | '/_authed/progress'
+    | '/_authed/settings'
     | '/api/analyze-food'
     | '/api/coach'
+    | '/_authed/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AddRoute: typeof AddRoute
-  AnalyticsRoute: typeof AnalyticsRoute
-  ProgressRoute: typeof ProgressRoute
-  SettingsRoute: typeof SettingsRoute
+  AuthedRoute: typeof AuthedRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
   ApiAnalyzeFoodRoute: typeof ApiAnalyzeFoodRoute
   ApiCoachRoute: typeof ApiCoachRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/progress': {
-      id: '/progress'
-      path: '/progress'
-      fullPath: '/progress'
-      preLoaderRoute: typeof ProgressRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/analytics': {
-      id: '/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsRouteImport
+    '/_authed': {
+      id: '/_authed'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/add': {
-      id: '/add'
-      path: '/add'
-      fullPath: '/add'
-      preLoaderRoute: typeof AddRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_authed/': {
+      id: '/_authed/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthedIndexRouteImport
+      parentRoute: typeof AuthedRoute
     }
     '/api/coach': {
       id: '/api/coach'
@@ -172,18 +194,73 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAnalyzeFoodRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authed/settings': {
+      id: '/_authed/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthedSettingsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/progress': {
+      id: '/_authed/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof AuthedProgressRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/analytics': {
+      id: '/_authed/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AuthedAnalyticsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/add': {
+      id: '/_authed/add'
+      path: '/add'
+      fullPath: '/add'
+      preLoaderRoute: typeof AuthedAddRouteImport
+      parentRoute: typeof AuthedRoute
+    }
   }
 }
 
+interface AuthedRouteChildren {
+  AuthedAddRoute: typeof AuthedAddRoute
+  AuthedAnalyticsRoute: typeof AuthedAnalyticsRoute
+  AuthedProgressRoute: typeof AuthedProgressRoute
+  AuthedSettingsRoute: typeof AuthedSettingsRoute
+  AuthedIndexRoute: typeof AuthedIndexRoute
+}
+
+const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedAddRoute: AuthedAddRoute,
+  AuthedAnalyticsRoute: AuthedAnalyticsRoute,
+  AuthedProgressRoute: AuthedProgressRoute,
+  AuthedSettingsRoute: AuthedSettingsRoute,
+  AuthedIndexRoute: AuthedIndexRoute,
+}
+
+const AuthedRouteWithChildren =
+  AuthedRoute._addFileChildren(AuthedRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AddRoute: AddRoute,
-  AnalyticsRoute: AnalyticsRoute,
-  ProgressRoute: ProgressRoute,
-  SettingsRoute: SettingsRoute,
+  AuthedRoute: AuthedRouteWithChildren,
+  LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
   ApiAnalyzeFoodRoute: ApiAnalyzeFoodRoute,
   ApiCoachRoute: ApiCoachRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

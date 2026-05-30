@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Shell } from "@/components/Shell";
-import { addPhoto, deletePhoto, logWeight, useStore } from "@/lib/store";
+import { addPhoto, deletePhoto, logWeight, useStore, type ProgressPhoto } from "@/lib/store";
+import { uploadPhoto, useSignedUrl } from "@/lib/photos";
 import { useMemo, useRef, useState } from "react";
-import { Camera, ImagePlus, Trash2, TrendingDown } from "lucide-react";
+import { Camera, ImagePlus, Loader2, Trash2, TrendingDown } from "lucide-react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/progress")({
+export const Route = createFileRoute("/_authed/progress")({
   head: () => ({
     meta: [
       { title: "Progress — Weight & Photos" },
@@ -159,15 +160,20 @@ function PhotosTab() {
   const photos = useStore((s) => s.photos);
   const fileRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<"front" | "side" | "back">("front");
+  const [uploading, setUploading] = useState(false);
 
-  const handle = (file?: File) => {
-    if (!file) return;
-    const r = new FileReader();
-    r.onload = () => {
-      addPhoto({ date: new Date().toISOString().slice(0, 10), view, imageUrl: r.result as string });
+  const handle = async (file?: File) => {
+    if (!file || uploading) return;
+    setUploading(true);
+    try {
+      const path = await uploadPhoto(file, "progress");
+      addPhoto({ date: new Date().toISOString().slice(0, 10), view, imagePath: path });
       toast.success("Photo added");
-    };
-    r.readAsDataURL(file);
+    } catch (e) {
+      toast.error(`Upload failed: ${(e as Error).message}`);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const grouped: Record<string, typeof photos> = { front: [], side: [], back: [] };
@@ -189,9 +195,11 @@ function PhotosTab() {
 
       <button
         onClick={() => fileRef.current?.click()}
-        className="flex w-full items-center justify-center gap-2 border border-dashed border-border bg-surface-2 py-6 text-sm font-semibold"
+        disabled={uploading}
+        className="flex w-full items-center justify-center gap-2 border border-dashed border-border bg-surface-2 py-6 text-sm font-semibold disabled:opacity-50"
       >
-        <ImagePlus className="h-5 w-5" /> Add {view} photo
+        {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+        {uploading ? "Uploading…" : `Add ${view} photo`}
       </button>
       <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => handle(e.target.files?.[0])} />
 
@@ -201,15 +209,7 @@ function PhotosTab() {
             <div className="label-eyebrow mb-2">{v} view</div>
             <div className="grid grid-cols-2 gap-2">
               {grouped[v].map((p) => (
-                <div key={p.id} className="panel">
-                  <img src={p.imageUrl} alt={v} className="aspect-square w-full object-cover" />
-                  <div className="flex items-center justify-between border-t border-border px-2 py-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider">{p.date.slice(5)}</span>
-                    <button onClick={() => deletePhoto(p.id)} className="p-1 text-muted-foreground">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
+                <PhotoCard key={p.id} photo={p} view={v} />
               ))}
             </div>
           </div>
@@ -222,6 +222,29 @@ function PhotosTab() {
           Take consistent weekly photos in the same lighting to track real body changes.
         </div>
       )}
+    </div>
+  );
+}
+
+function PhotoCard({ photo, view }: { photo: ProgressPhoto; view: string }) {
+  const url = useSignedUrl(photo.imagePath);
+  return (
+    <div className="panel">
+      <div className="aspect-square w-full bg-surface-2">
+        {url ? (
+          <img src={url} alt={view} className="aspect-square w-full object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+          </div>
+        )}
+      </div>
+      <div className="flex items-center justify-between border-t border-border px-2 py-1.5">
+        <span className="text-[10px] font-semibold uppercase tracking-wider">{photo.date.slice(5)}</span>
+        <button onClick={() => deletePhoto(photo.id)} className="p-1 text-muted-foreground">
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
     </div>
   );
 }
