@@ -21,7 +21,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           clearStore();
         }
-        if (event === "SIGNED_IN") router.invalidate();
+        // Always invalidate on INITIAL_SESSION / SIGNED_IN so the _authed gate
+        // re-runs on the client. SSR short-circuits the gate (no window), so
+        // without this the route never redirects to /login when there's no
+        // session, and protected pages render the spinner forever.
+        if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+          router.invalidate();
+        }
       }
     });
     return () => subscription.unsubscribe();
