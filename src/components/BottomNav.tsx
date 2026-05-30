@@ -20,7 +20,7 @@ export function BottomNav() {
           return (
             <Link
               key={to}
-              to={to}
+              to={to as "/"}
               className="flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-semibold tracking-wider uppercase"
             >
               <div
