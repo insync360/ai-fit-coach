@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+const MODEL = "gpt-4o";
+const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+
 type FoodItem = {
   name: string;
   serving: string;
@@ -22,8 +25,8 @@ export const Route = createFileRoute("/api/analyze-food")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+        const key = process.env.OPENAI_API_KEY;
+        if (!key) return new Response("Missing OPENAI_API_KEY", { status: 500 });
 
         const body = (await request.json()) as { imageDataUrl?: string; description?: string; clarifications?: string };
         if (!body.imageDataUrl && !body.description) {
@@ -46,14 +49,15 @@ Estimate realistic portion sizes. If portion or preparation is unclear, set conf
           userContent.push({ type: "image_url", image_url: { url: body.imageDataUrl } });
         }
 
-        const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        const res = await fetch(OPENAI_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${key}`,
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
+            model: MODEL,
+            response_format: { type: "json_object" },
             messages: [
               { role: "system", content: "You return only valid JSON. No prose, no code fences." },
               { role: "user", content: userContent },
@@ -64,16 +68,15 @@ Estimate realistic portion sizes. If portion or preparation is unclear, set conf
         if (!res.ok) {
           const txt = await res.text();
           if (res.status === 429) return new Response("Rate limit. Try again shortly.", { status: 429 });
-          if (res.status === 402) return new Response("AI credits exhausted.", { status: 402 });
+          if (res.status === 401) return new Response("Invalid OPENAI_API_KEY.", { status: 500 });
           return new Response(`AI error: ${txt}`, { status: 500 });
         }
 
         const data = await res.json();
         const raw = data?.choices?.[0]?.message?.content ?? "";
-        const jsonText = String(raw).replace(/```json|```/g, "").trim();
         let parsed: AnalyzeResult;
         try {
-          parsed = JSON.parse(jsonText);
+          parsed = JSON.parse(raw);
         } catch {
           return new Response(JSON.stringify({ error: "Could not parse AI response", raw }), {
             status: 502,

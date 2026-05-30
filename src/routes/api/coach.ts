@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+const MODEL = "gpt-4o";
+const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+
 export const Route = createFileRoute("/api/coach")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+        const key = process.env.OPENAI_API_KEY;
+        if (!key) return new Response("Missing OPENAI_API_KEY", { status: 500 });
 
         const body = (await request.json()) as {
           messages: { role: "user" | "assistant"; content: string }[];
@@ -17,11 +20,11 @@ export const Route = createFileRoute("/api/coach")({
 USER CONTEXT:
 ${body.context ?? "No context provided."}`;
 
-        const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        const res = await fetch(OPENAI_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
+            model: MODEL,
             messages: [{ role: "system", content: system }, ...body.messages],
           }),
         });
@@ -29,7 +32,7 @@ ${body.context ?? "No context provided."}`;
         if (!res.ok) {
           const txt = await res.text();
           if (res.status === 429) return new Response("Rate limit. Try again shortly.", { status: 429 });
-          if (res.status === 402) return new Response("AI credits exhausted.", { status: 402 });
+          if (res.status === 401) return new Response("Invalid OPENAI_API_KEY.", { status: 500 });
           return new Response(`AI error: ${txt}`, { status: 500 });
         }
 
