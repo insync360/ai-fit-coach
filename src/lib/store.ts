@@ -300,22 +300,28 @@ export function setTheme(theme: "light" | "dark") {
   updateProfile({ theme });
 }
 
-export function updateProfile(patch: Partial<Profile>) {
+export function updateProfile(patch: Partial<Profile>): Promise<void> {
   const prev = state.profile;
   setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
   if (patch.theme) applyTheme(patch.theme);
   const userId = state.userId;
-  if (!userId) return;
+  if (!userId) return Promise.resolve();
 
-  void supabase
+  return supabase
     .from("profiles")
     .update(profilePatchToDb(patch))
     .eq("user_id", userId)
-    .then(({ error }) => {
+    .select("user_id")
+    .then(({ data, error }) => {
       if (error) {
-        toast.error(`Save failed: ${error.message}`);
         setState((s) => ({ ...s, profile: prev }));
         if (patch.theme) applyTheme(prev.theme);
+        throw new Error(error.message);
+      }
+      // Defensive: if the profile row is missing (trigger never fired), the
+      // update silently affects zero rows. Surface that to the caller.
+      if (!data || data.length === 0) {
+        throw new Error("No profile row to update — sign out and back in.");
       }
     });
 }
