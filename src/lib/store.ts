@@ -77,7 +77,7 @@ const defaultProfile: Profile = {
   targetProtein: 150,
   targetCarbs: 220,
   targetFat: 65,
-  theme: "dark",
+  theme: "light",
 };
 
 const defaultState: AppState = {
