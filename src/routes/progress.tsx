@@ -41,7 +41,7 @@ function ProgressPage() {
   );
 }
 
-function WeightTab({ state }: { state: ReturnType<typeof useStore<ReturnType<typeof getFullState>>> }) {
+function WeightTab({ state }: { state: ReturnType<typeof getFullState> }) {
   const [w, setW] = useState("");
 
   const weights = state.weights;
@@ -52,7 +52,7 @@ function WeightTab({ state }: { state: ReturnType<typeof useStore<ReturnType<typ
   const toGo = current - target;
 
   const chartData = useMemo(() => {
-    return weights.map((w) => ({ date: w.date.slice(5), weight: w.weight }));
+    return weights.map((wt) => ({ date: wt.date.slice(5), weight: wt.weight }));
   }, [weights]);
 
   // simple linear projection
@@ -142,7 +142,7 @@ function WeightTab({ state }: { state: ReturnType<typeof useStore<ReturnType<typ
 }
 
 function getFullState() {
-  return { weights: [] as any, profile: {} as any };
+  return useStore((s) => s);
 }
 
 function StatBlock({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) {
